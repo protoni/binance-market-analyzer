@@ -22,7 +22,7 @@ def getFirstKline(params):
     params["limit"] = 1
     
     r = requests.get(constants.CANDLES_URL, params=params)
-    #print(r.url)
+    
     # Change limit back to old value
     params["limit"] = limitOld
     
@@ -32,14 +32,6 @@ def getFirstKlineTimestamp(params):
     kline = getFirstKline(params)
     
     return kline[0][constants.CANDLE_CLOSE_TIME_IDX]
-
-def createFolderRecursively(path):
-    try:
-        if not os.path.isdir(path):
-            os.makedirs(path)
-            print("Created a new folder for Candle data: " + path)
-    except OSError:
-        print ("Creation of the directory %s failed" % path)
 
 def getCandleFilePath(symbol):
     parentDir = os.getcwd().replace('\\', '/')
@@ -103,12 +95,7 @@ def createFolderStructure(symbol):
         fetchedData += get_candles(symbol, interval, utils.dateToTimestamp(constants.BTC_GENESIS_BLOCK_DATE), utils.getCurrentTimestamp(), totalData, fetchedData)
         #print("fetched: " + str(fetchedData))
 
-def ensureFileExists(path):
-    if not os.path.exists(os.path.dirname(file_path)):
-        os.mkdirs(os.path.dirname(file_path))
 
-def dumpListToAFile(list, file):
-    pickle.dump(list, file)
 
 def load_candles(symbol, interval):
     candleFilePath = getCandleFileName(symbol, interval)
@@ -121,26 +108,7 @@ def load_candles(symbol, interval):
     print("first TS: " + list[0][constants.CANDLE_CLOSE_TIME_IDX])
     print("last TS: " + list[-1][constants.CANDLE_CLOSE_TIME_IDX])
     
-    
 load_candles('ETH', '1m')
-
-def listToString(list):
-    string = ""
-    for item in list:
-        string += str(item) + ","
-        
-    return string
-
-def ensureFileExists(symbol, interval):
-    path = getCandleFilePath(symbol)
-    
-    if os.path.isdir(path):
-        if not interval in os.listdir(path):
-            name = getCandleFileName()
-            f = open(name, 'w')
-            f.write("")
-            f.close()
-            print("Created new file: " + name)
 
 def getCandleStartTimeForSymbol(symbol):
     params = {
@@ -155,9 +123,6 @@ def getCandleStartTimeForSymbol(symbol):
 
 def getCandleDataCountForSymbol(symbol, interval):
     return (utils.getCurrentTimestamp() - getCandleStartTimeForSymbol(symbol)) / utils.getIntervalMs(interval)
-
-def progress(current, total):
-    utils.printProgressBar(current, total, prefix = 'Progress:', suffix = 'Complete', length = 50)
 
 def get_candles(symbol, interval, startTime, endTime, totalData, fetchedData):
     klines = []
@@ -191,7 +156,7 @@ def get_candles(symbol, interval, startTime, endTime, totalData, fetchedData):
             klines.append(x)
             count += 1
             fetchedData += 1
-            candleFile.write(listToString(x) + "\n")
+            candleFile.write(utils.listToString(x) + "\n")
             lastTS = x[constants.CANDLE_CLOSE_TIME_IDX]
         
         params['startTime'] = lastTS
@@ -199,7 +164,7 @@ def get_candles(symbol, interval, startTime, endTime, totalData, fetchedData):
         #print("progress: " + str((len(klines) / totalOneCandle) * 100))
         #print("Progress total for all " + symbol + " data: " + str(fetchedData / totalData * 100))
         #progress(len(klines), totalOneCandle)
-        progress(fetchedData, totalData)
+        utils.progress(fetchedData, totalData)
         
     candleFile.close()
    

@@ -45,3 +45,28 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
     # Print New Line on Complete
     if iteration == total: 
         print()
+
+def progress(current, total):
+    printProgressBar(current, total, prefix = 'Progress:', suffix = 'Complete', length = 50)
+
+def dumpListToAFile(list, file):
+    pickle.dump(list, file)
+
+def listToString(list):
+    string = ""
+    for item in list:
+        string += str(item) + ","
+        
+    return string
+
+def ensureFileExists(path):
+    if not os.path.exists(os.path.dirname(file_path)):
+        os.mkdirs(os.path.dirname(file_path))
+
+def createFolderRecursively(path):
+    try:
+        if not os.path.isdir(path):
+            os.makedirs(path)
+            print("Created a new folder: " + path)
+    except OSError:
+        print ("Creation of the directory %s failed" % path)
