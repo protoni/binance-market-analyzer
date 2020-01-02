@@ -5,60 +5,13 @@ import time
 import datetime
 import ciso8601
 import utils
+import constants
 import os
 import pickle
 
-BTC_GENESIS_BLOCK_DATE = '2009-01-03'
 
-# (bytes)
-AVERAGE_CANDLE_LINE_SIZE = 128
-
-# Binance base URL
-BASE_URL_BN = "https://api.binance.com"
-ASSETS_URL = "{}/api/v1/exchangeInfo".format(BASE_URL_BN)
-CANDLES_URL = "{}/api/v3/klines".format(BASE_URL_BN)
-
-INTERVALS = [
-'1m',
-'3m',
-'5m',
-'15m',
-'30m',
-'1h',
-'2h',
-'4h',
-'6h',
-'8h',
-'12h',
-'1d',
-'3d',
-'1w',
-'1M'
-]
 
 client = Client("api-key", "api-secret", {"verify": False, "timeout": 1800})
-
-#startTime = getCurrentTimestamp()
-#klines = client.get_historical_klines("ETHBTC", Client.KLINE_INTERVAL_1HOUR, "1 Jan, 2014", "02 Jan, 2020")
-#print("count: " + str(len(klines)))
-#endTime = getCurrentTimestamp()
-
-#print("elapsed time python api: " + str(endTime - startTime))
-
-#print("count: " + str(len(klines)))
-
-#print(client.get_exchange_info())
-
-#klines = client.get_historical_klines("ETHBTC", Client.KLINE_INTERVAL_1MINUTE, "23 Dec, 2008", "25 Dec, 2008")
-#print("count: " + str(len(klines)))
-
-#with open('minuteCandlesAllmin1.txt', 'w') as outfile:
-#    json.dump(klines, outfile)
-
-#with open('minuteCandlesAllmin1.txt') as json_file:
-#    print(str(len(json.load(json_file))))
-
-
 
 
 
@@ -68,7 +21,7 @@ def getFirstKline(params):
     # Temporarily change limit to 1
     params["limit"] = 1
     
-    r = requests.get(CANDLES_URL, params=params)
+    r = requests.get(constants.CANDLES_URL, params=params)
     #print(r.url)
     # Change limit back to old value
     params["limit"] = limitOld
@@ -78,7 +31,7 @@ def getFirstKline(params):
 def getFirstKlineTimestamp(params):
     kline = getFirstKline(params)
     
-    return kline[0][6]
+    return kline[0][constants.CANDLE_CLOSE_TIME_IDX]
 
 def createFolderRecursively(path):
     try:
@@ -124,13 +77,13 @@ def checkFolderStructure(symbol, interval):
 def countDataSizeToFetch(symbol, ignoreExisting):
     count = 0
     countTemp = 0
-    for interval in INTERVALS:
+    for interval in constants.INTERVALS:
         if not checkFolderStructure(symbol, interval) or ignoreExisting:
             countTemp = getCandleDataCountForSymbol(symbol, interval)
             count += countTemp
             print("Symbol: " + symbol + " with interval: " + interval + " data count: " + str(countTemp))
     
-    print("totalData: " + str(count) + " Estimated size: " + str((count * AVERAGE_CANDLE_LINE_SIZE) / 1000) + " kB")
+    print("totalData: " + str(count) + " Estimated size: " + str((count * constants.AVERAGE_CANDLE_LINE_SIZE) / 1000) + " kB")
     return count
         
 def createFolderStructure(symbol):
@@ -138,7 +91,7 @@ def createFolderStructure(symbol):
     fetchedData = 0
     
     intervalsToLoad = []
-    for interval in INTERVALS:
+    for interval in constants.INTERVALS:
         if not checkFolderStructure(symbol, interval):
             intervalsToLoad.append(interval)
         else:
@@ -146,8 +99,8 @@ def createFolderStructure(symbol):
             
     for interval in intervalsToLoad:
         print("Creating candle data for symbol: " + symbol + " with interval: " + interval)
-        print("totalData: " + str(totalData) + " Estimated size: " + str((totalData * AVERAGE_CANDLE_LINE_SIZE) / 1000) + " kB")
-        fetchedData += get_candles(symbol, interval, utils.dateToTimestamp(BTC_GENESIS_BLOCK_DATE), utils.getCurrentTimestamp(), totalData, fetchedData)
+        print("totalData: " + str(totalData) + " Estimated size: " + str((totalData * constants.AVERAGE_CANDLE_LINE_SIZE) / 1000) + " kB")
+        fetchedData += get_candles(symbol, interval, utils.dateToTimestamp(constants.BTC_GENESIS_BLOCK_DATE), utils.getCurrentTimestamp(), totalData, fetchedData)
         #print("fetched: " + str(fetchedData))
 
 def ensureFileExists(path):
@@ -165,9 +118,11 @@ def load_candles(symbol, interval):
         list.append(x.split(","))
     
     print("symbol: " + symbol + " list len: " + str(len(list)))
-    print("first TS: " + list[0][6])
-    print("last TS: " + list[-1][6])
-#load_candles('ETH', '1M')
+    print("first TS: " + list[0][constants.CANDLE_CLOSE_TIME_IDX])
+    print("last TS: " + list[-1][constants.CANDLE_CLOSE_TIME_IDX])
+    
+    
+load_candles('ETH', '1m')
 
 def listToString(list):
     string = ""
@@ -191,7 +146,7 @@ def getCandleStartTimeForSymbol(symbol):
     params = {
         'symbol': symbol + 'BTC',
         "interval": '1m',
-        "startTime": utils.dateToTimestamp(BTC_GENESIS_BLOCK_DATE),
+        "startTime": utils.dateToTimestamp(constants.BTC_GENESIS_BLOCK_DATE),
         "endTime": utils.getCurrentTimestamp(),
         "limit": 1
     }
@@ -207,14 +162,9 @@ def progress(current, total):
 def get_candles(symbol, interval, startTime, endTime, totalData, fetchedData):
     klines = []
     
-    #candleFile = open(getCandleFile(symbol, interval), "w+")
-    #candleFile.write("")
-    #candleFile.close()
-    
     candleFilePath = getCandleFileName(symbol, interval)
     candleFile = open(candleFilePath, 'a+')
-    #ensureFileExists(candleFile)
-    
+
     params = {
         'symbol': symbol + 'BTC',
         "interval": interval,
@@ -229,35 +179,20 @@ def get_candles(symbol, interval, startTime, endTime, totalData, fetchedData):
     count = 0
     valuesAdded = 1
     lastTS = 0
-    #with open(candleFilePath, 'wb') as candleFile:
+    
     while(valuesAdded > 0):
         
         klinesLenOld = len(klines)
-        r = requests.get(CANDLES_URL, params=params)
-        #candleFile.write(r.text)
-        #print(r.text)
-        
+        r = requests.get(constants.CANDLES_URL, params=params)
+       
         valuesAdded = 0
         for x in json.loads(r.content):
             valuesAdded += 1
             klines.append(x)
-            #print(x)
-            #dumpListToAFile(x, candleFile)
             count += 1
             fetchedData += 1
             candleFile.write(listToString(x) + "\n")
-            lastTS = x[6]
-        
-        print("valuesAdded: " + str(valuesAdded))
-        #print("items saved: " + str(count))
-        
-        #str = json.dumps(r.content)
-        #print("len: " + str(len(str)))
-        #candleFile.write(json.dumps(r.content))
-        #with open(candleFilePath, 'a+') as outfile:
-        #    json.dump(r.content, outfile)
-        
-        #valuesAdded = len(klines) - klinesLenOld
+            lastTS = x[constants.CANDLE_CLOSE_TIME_IDX]
         
         params['startTime'] = lastTS
         
@@ -271,7 +206,6 @@ def get_candles(symbol, interval, startTime, endTime, totalData, fetchedData):
     return count
 
 
-#print("count: " + str(len(get_candles('ETH', '1m'))))
 
 
 #dateToTimestamp('2014-12-05T12:30:45.123456-02:00')
@@ -289,5 +223,6 @@ print("current: " + str(current))
 
 #checkFolderStructure('ETH', '1m')
 
-#createFolderStructure('ETH')
-countDataSizeToFetch('ETH', True)
+createFolderStructure('ETH')
+#countDataSizeToFetch('ETH', True)
+
