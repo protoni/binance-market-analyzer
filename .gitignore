@@ -1,1 +1,4 @@
 candles/
+__pycache__/
+tests/data.txt
+tests/minuteCandlesOneDay.txt
