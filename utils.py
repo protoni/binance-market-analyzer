@@ -1,5 +1,7 @@
 import time
 import ciso8601
+import os
+from pathlib import Path
 
 def dateToTimestamp(date):
     date += 'T00:00:00.000000'
@@ -60,8 +62,31 @@ def listToString(list):
     return string
 
 def ensureFileExists(path):
-    if not os.path.exists(os.path.dirname(file_path)):
-        os.mkdirs(os.path.dirname(file_path))
+    filename = Path(path)
+    filename.touch(exist_ok=True)
+
+def deleteFile(path):
+    if os.path.exists(path):
+        os.remove(path)
+
+def readFile(path):
+    if os.path.exists(path):
+         return open(path, "r")
+    else:
+        print("Couldn't open file: " + path + "! File doesn't exist.")
+        return 0
+
+def writeFile(path, data, append):
+    ensureFileExists(path)
+
+    if append:
+        f = open(path, 'a+')
+    else:
+        f = open(path, 'w+')
+
+    f.write(data)
+
+    f.close()
 
 def createFolderRecursively(path):
     try:

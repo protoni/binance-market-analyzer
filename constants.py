@@ -47,3 +47,12 @@ CANDLE_NUM_OF_TRADEX_IDX = 8
 CANDLE_TAKER_BUY_BASE_ASSET_VOL_IDX = 9
 CANDLE_TAKER_BUY_QUOTE_ASSET_VOL_IDX = 10
 CANDLE_IGNORE_IDX = 11
+
+# How many subsequent missing timestamps trigger a data de sync.
+RESYNC_DATA_MISSING_TS_COUNT = 2
+
+# Keep track of how much data is missing from the binance API. ( missing datapoints )
+DESYNC_DATA_FILE = 'missingCandleData'
+
+# How much the saved data timestamp can deviate from available new data ( milliseconds )
+DATA_DESYNC_LIMIT = 2000 #(1000 * 60) * 10

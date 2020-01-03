@@ -1,3 +1,3 @@
-candles/
-__pycache__/
+candles
+__pycache__
 tests/minuteCandlesOneDay.txt
