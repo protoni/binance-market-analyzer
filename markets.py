@@ -8,7 +8,7 @@ import utils
 import constants
 import os
 import pickle
-
+#import graph
 
 
 client = Client("api-key", "api-secret", {"verify": False, "timeout": 1800})
@@ -162,7 +162,7 @@ def get_candles(symbol, interval, startTime, endTime, totalData, fetchedData):
         
         params['startTime'] = lastTS
         
-        print("Progress: " + str((totalData / fetchedData) * 100) + " %")
+        print("Progress: " + str((fetchedData / totalData) * 100) + " %")
 
         '''
         if valuesAdded == 0:
@@ -179,7 +179,7 @@ def get_candles(symbol, interval, startTime, endTime, totalData, fetchedData):
 
 def getLastTimestampSaved(symbol, interval):
     data = load_candles(symbol, interval)
-    print("items loaded: " + str(len(data)))
+    #print("items loaded: " + str(len(data)))
     if len(data) > 0:
         return int(data[-1][constants.CANDLE_CLOSE_TIME_IDX])
     else:
@@ -253,6 +253,7 @@ def reFetchCandleData(symbol, interval):
     createFolderStructure(symbol)
 
 def getTimestampDifferences(data, interval):
+    diffCountTotal = 0
     if len(data) > 0:
         oldTs = int(data[0][constants.CANDLE_CLOSE_TIME_IDX])
         newTs = int(data[0][constants.CANDLE_CLOSE_TIME_IDX])
@@ -262,7 +263,7 @@ def getTimestampDifferences(data, interval):
         intervalMs = utils.getIntervalMs(interval)
         maxDeviance = constants.RESYNC_DATA_MISSING_TS_COUNT * intervalMs
 
-        diffCountTotal = 0
+        
         for row in data:
             newTs = int(data[idx][constants.CANDLE_CLOSE_TIME_IDX])
 
@@ -349,6 +350,10 @@ def checkCandleData(symbol, interval, updateDesyncFile):
 
     return deviance
 
+def createCandleChart(symbol, interval):
+    data = load_candles(symbol, interval)
+    graph.plot(data)
+#createCandleChart('ETH', '1d')
 
 def archiveOldDesyncReport():
     utils.deleteFile(constants.DESYNC_DATA_FILE)
@@ -374,11 +379,19 @@ def checkAllCandleData(updateDesyncFile):
         print("Checked missing data points.")
         print("Checked items: " + str(itemsChecked) + ". Average deviance: " + str(devianceTotal / itemsChecked) + " Max deviance: " + str(constants.RESYNC_DATA_MISSING_TS_COUNT))
 
-#checkAllCandleData(False)
+checkAllCandleData(False)
 #checkCandleData('ETH', '30m')
 
 #checkFolderStructure('ETH', '1m')
 
-createFolderStructure('ETH')
+
 #countDataSizeToFetch('ETH', True)
 
+running = True
+while(running):
+
+    print("Syncing data..")
+    createFolderStructure('ETH')
+    print("Sync data done!")
+
+    time.sleep( 60 )
